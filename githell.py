@@ -140,6 +140,8 @@ def handleStatusOp(root, silent=False):
         clean = clean.ljust(17)
         if repo["unpushed"]:
             unpushed = colorize("unpushed", "red")
+        elif not repo["valid"]:
+            unpushed = colorize("????????", "red")
         else:
             unpushed = colorize("pushed", "green")
         unpushed = unpushed.ljust(18)
