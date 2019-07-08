@@ -6,6 +6,16 @@ import termcolor
 import six
 
 
+NO_COLORING = False
+
+
+def colorize(text, color):
+    if NO_COLORING:
+        return text
+    else:
+        return termcolor.colored(text, color)
+
+
 def thisdir():
     path = os.path.abspath(os.path.realpath(__file__))
     path = path.split(os.path.sep)[:-1]
@@ -20,19 +30,25 @@ def isDirRepo(path):
     return os.path.isdir(path + os.path.sep + ".git")
 
 
-def execGitCommand(command, repo):
+def execGitCommand(command, repo, silentOnSuccess=False, noErrLogs=False):
     try:
-        subprocess.check_output(["git"] + command,
-                                cwd=repo["repo"])
+        if noErrLogs:
+            subprocess.check_output(["git"] + command,
+                                    stderr=subprocess.PIPE,
+                                    cwd=repo["repo"])
+        else:
+            subprocess.check_output(["git"] + command,
+                                    cwd=repo["repo"])
     except Exception:
         print("%s %s" % (repo["formattedName"],
-                         termcolor.colored("[failed]",
-                                           "red")))
+                         colorize("[failed]",
+                                  "red")))
         return False
     else:
-        print("%s %s" % (repo["formattedName"],
-                         termcolor.colored("[ok]",
-                                           "green")))
+        if not silentOnSuccess:
+            print("%s %s" % (repo["formattedName"],
+                             colorize("[ok]",
+                                      "green")))
         return True
 
 
@@ -45,7 +61,7 @@ def getRepoBranch(repo):
                                          stderr=subprocess.PIPE,
                                          cwd=repo)[:-1]
     except Exception:
-        branch = termcolor.colored("<unknown>", "red")
+        branch = colorize("<unknown>", "red")
     return branch
 
 
@@ -68,6 +84,21 @@ def hasRepoUnpushedCommits(repo):
         return False
 
 
+def isInUpstream(repo):
+    try:
+        subprocess.check_output(["git",
+                                 "rev-parse",
+                                 "--abbrev-ref",
+                                 "--symbolic-full-name",
+                                 "@{u}"],
+                                stderr=subprocess.PIPE,
+                                cwd=repo)
+    except Exception:
+        return False
+    else:
+        return True
+
+
 def handleStatusOp(root, silent=False):
     allDirs = os.listdir(root)
     allDirs = [root + os.path.sep + d for d in allDirs]
@@ -80,13 +111,15 @@ def handleStatusOp(root, silent=False):
         branch = getRepoBranch(repo)
         clean = isRepoClean(repo)
         unpushed = hasRepoUnpushedCommits(repo)
+        inUpstream = isInUpstream(repo)
         repos.append({
             "repo": repo,
             "name": repoName,
             "branch": branch,
             "clean": clean,
             "unpushed": unpushed,
-            "valid": branch != termcolor.colored("<unknown>", "red")
+            "inUpstream": inUpstream,
+            "valid": branch != colorize("<unknown>", "red")
         })
         if len(repoName) > maxNameLen:
             maxNameLen = len(repoName)
@@ -101,19 +134,25 @@ def handleStatusOp(root, silent=False):
             branch = repo["branch"].ljust(maxBranchLen)
         repo["formattedBranch"] = branch
         if repo["clean"]:
-            clean = termcolor.colored("clean", "green")
+            clean = colorize("clean", "green")
         else:
-            clean = termcolor.colored("dirty", "red")
+            clean = colorize("dirty", "red")
         clean = clean.ljust(15)
         if repo["unpushed"]:
-            unpushed = termcolor.colored("unpushed", "red")
+            unpushed = colorize("unpushed", "red")
         else:
-            unpushed = termcolor.colored("pushed", "green")
+            unpushed = colorize("pushed", "green")
+        unpushed = unpushed.ljust(16)
+        if repo["inUpstream"]:
+            inUpstream = colorize("remote", "green")
+        else:
+            inUpstream = colorize("local", "red")
         if not silent:
-            print("%s %s %s %s" % (repoName,
-                                   branch,
-                                   clean,
-                                   unpushed))
+            print("%s %s %s %s %s" % (repoName,
+                                      branch,
+                                      clean,
+                                      unpushed,
+                                      inUpstream))
     return repos
 
 
@@ -124,19 +163,22 @@ def handlePullOp(root):
             execGitCommand(["pull"], repo)
         else:
             print("%s %s" % (repo["formattedName"],
-                             termcolor.colored("[skipped]",
-                                               "yellow")))
+                             colorize("[skipped]",
+                                      "yellow")))
 
 
 def handlePushOp(root):
     repos = handleStatusOp(root, True)
     for repo in repos:
         if repo["unpushed"] and repo["valid"]:
-            execGitCommand(["push"], repo)
+            command = ["push"]
+            if not repo["inUpstream"]:
+                command = ["push", "-u", "origin", repo["branch"]]
+            execGitCommand(command, repo, False, True)
         else:
             print("%s %s" % (repo["formattedName"],
-                             termcolor.colored("[skipped]",
-                                               "yellow")))
+                             colorize("[skipped]",
+                                      "yellow")))
 
 
 def handleCommitOp(root, msg):
@@ -145,12 +187,12 @@ def handleCommitOp(root, msg):
         msg = six.moves.input("Enter commit message: ")
     for repo in repos:
         if not repo["clean"] and repo["valid"]:
-            if execGitCommand(["add", "."], repo):
+            if execGitCommand(["add", "."], repo, True):
                 execGitCommand(["commit", "-m", msg], repo)
         else:
             print("%s %s" % (repo["formattedName"],
-                             termcolor.colored("[skipped]",
-                                               "yellow")))
+                             colorize("[skipped]",
+                                      "yellow")))
 
 
 def handleCheckoutOp(root, branch, new):
@@ -163,28 +205,34 @@ def handleCheckoutOp(root, branch, new):
             execGitCommand(command, repo)
         else:
             print("%s %s" % (repo["formattedName"],
-                             termcolor.colored("[skipped]",
-                                               "yellow")))
-    print(termcolor.colored("\nIn case of switching to nonexistent " +
-                            "branch, you must provide parameter --new!",
-                            "red"))
+                             colorize("[skipped]",
+                                      "yellow")))
+    print(colorize("\nIn case of switching to nonexistent " +
+                   "branch, you must provide parameter --new!",
+                   "red"))
 
 
 def main():
+    global NO_COLORING
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", help="Action to be performed")
     parser.add_argument("-m", "--message",
                         required=False,
                         help="Commit message")
     parser.add_argument("-n", "--new",
-                        required=False,
                         action="store_true",
+                        required=False,
                         help="When specified, new branch is " +
                         "created during checkout")
     parser.add_argument("-b", "--branch",
                         required=False,
                         help="Name of branch to be switched to")
+    parser.add_argument("--no-color",
+                        action="store_true",
+                        required=False,
+                        help="Disables coloring")
     args = parser.parse_args()
+    NO_COLORING = args.no_color
     operation = args.operation
     if operation == "debug":
         state = handleStatusOp(workingdir(), True)

@@ -1,7 +1,9 @@
 # GitHell
 Tool for managing multiple git repositories at once.
 
-Anyway, If you wonder why this tool is named githell, its because managing multiple repositories which are part of one project is **hell**. 
+Anyway, If you wonder why this tool is named githell, its because
+managing multiple repositories which are part of one project
+is literally **hell** on earth.
 
 ## Installation
 ```
@@ -14,9 +16,9 @@ $ sudo ./install.sh
 ## Usage
 First, navigate to directory where all your repositories reside.
 
-For listing your repositories together with limited status information, type:
+For printing status of your repositories, type:
 ```
-$ githell list
+$ githell status
 ```
 
 For pulling of all valid repositories, type:
@@ -24,9 +26,22 @@ For pulling of all valid repositories, type:
 $ githell pull
 ```
 
-## TODO
-1) Extend **list** operation so that it will output if some unpushed commits are present in repo.
-2) Add support for bulk branch creation.
-3) Add support for bulk commit.
-4) Add support for bulk push.
-5) Add support for bulk branch swithing.
+For pushing all unpushed commits, type:
+```
+$ githell push
+```
+
+For commiting changes from all dirty repositories, type:
+```
+$ githell commit
+```
+
+For switching to existing branch in all dirty repositories, type:
+```
+$ githell --branch ${branchName} checkout
+```
+
+For switching to non-existent branch in all dirty repositories, type:
+```
+$ githell --branch ${branchName} --new checkout
+```
