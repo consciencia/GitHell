@@ -45,3 +45,7 @@ For switching to non-existent branch in all dirty repositories, type:
 ```
 $ githell --branch ${branchName} --new checkout
 ```
+
+## TODO
+1) Add support for work groups.
+2) Bulk diff.
