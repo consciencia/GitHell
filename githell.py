@@ -170,7 +170,7 @@ def handlePullOp(root):
 def handlePushOp(root):
     repos = handleStatusOp(root, True)
     for repo in repos:
-        if repo["unpushed"] and repo["valid"]:
+        if (repo["unpushed"] or not repo["inUpstream"]) and repo["valid"]:
             command = ["push"]
             if not repo["inUpstream"]:
                 command = ["push", "-u", "origin", repo["branch"]]
