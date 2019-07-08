@@ -137,12 +137,12 @@ def handleStatusOp(root, silent=False):
             clean = colorize("clean", "green")
         else:
             clean = colorize("dirty", "red")
-        clean = clean.ljust(15)
+        clean = clean.ljust(17)
         if repo["unpushed"]:
             unpushed = colorize("unpushed", "red")
         else:
             unpushed = colorize("pushed", "green")
-        unpushed = unpushed.ljust(16)
+        unpushed = unpushed.ljust(18)
         if repo["inUpstream"]:
             inUpstream = colorize("remote", "green")
         else:
