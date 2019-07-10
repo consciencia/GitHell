@@ -13,6 +13,7 @@ done
 echo "Origin is $MY_PATH."
 
 TARGET="/usr/bin/githell"
+TARGET2="/usr/bin/ghell"
 
 echo "Generating executable file in $TARGET..."
 cat > ./TEMP <<- EOM
@@ -24,9 +25,11 @@ export PYTHONDONTWRITEBYTECODE=1
 python $MY_PATH \$@
 EOM
 sudo cp ./TEMP $TARGET
+sudo cp ./TEMP $TARGET2
 rm ./TEMP
 
 echo "Adding +x flag..."
 sudo chmod +x $TARGET
+sudo chmod +x $TARGET2
 
 echo "Done"
