@@ -47,5 +47,6 @@ $ githell --branch ${branchName} --new checkout
 ```
 
 ## TODO
-1) Add support for work groups.
+1) Bulk stash push/pop.
 2) Bulk diff.
+3) Support for work groups.
