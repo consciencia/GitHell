@@ -10,7 +10,7 @@ NO_COLORING = False
 
 
 def colorize(text, color):
-    if NO_COLORING:
+    if NO_COLORING or os.name == 'nt':
         return text
     else:
         return termcolor.colored(text, color)
@@ -27,10 +27,13 @@ def workingdir():
 
 
 def isDirRepo(path):
-    return os.path.isdir(path + os.path.sep + ".git")
+    return os.path.isdir(os.path.join(path, ".git"))
 
 
-def execGitCommand(command, repo, silentOnSuccess=False, noErrLogs=False):
+def execGitCommand(command,
+                   repo,
+                   silentOnSuccess=False,
+                   noErrLogs=False):
     try:
         if noErrLogs:
             subprocess.check_output(["git"] + command,
@@ -60,6 +63,8 @@ def getRepoBranch(repo):
                                           "HEAD"],
                                          stderr=subprocess.PIPE,
                                          cwd=repo)[:-1]
+        if six.PY3:
+            branch = branch.decode("ascii")
     except Exception:
         branch = colorize("<unknown>", "red")
     return branch
