@@ -79,12 +79,13 @@ def isRepoClean(repo):
 
 def hasRepoUnpushedCommits(repo):
     try:
-        return not not len(subprocess.check_output(["git",
-                                                    "log",
-                                                    "--branches",
-                                                    "@{u}.."],
-                                                   stderr=subprocess.PIPE,
-                                                   cwd=repo))
+        status = subprocess.check_output(["git",
+                                          "status"],
+                                         stderr=subprocess.PIPE,
+                                         cwd=repo)
+        if six.PY3:
+            status = status.decode("ascii")
+        return "use \"git push\" to publish your local commits" in status
     except Exception:
         return False
 
